@@ -1,47 +1,78 @@
 # xyhelper-arkose
 
 
-Automatically fetches tokens for arkose to enable automated testing.
+Automatically obtain arkose tokens for automated testing.
+
+## Notice
+The BYPASS feature for project P is no longer available, and there is no reason provided. Please refrain from asking why.
 
 ## 1. Installation
-```bash
-git clone https://github.com/xyhelper/xyhelper-arkose.git
-cd xyhelper-arkose
-./deploy.sh
+Create the `docker-compose.yml` file:
+```yaml
+version: '3'
+services:
+  browser:
+    image: xyhelper/xyhelper-arkose-browser:latest
+    ports:
+      - "6901:6901"
+      - "8199:3000"
+    environment:
+      - VNC_PW=xyhelper
+      - LAUNCH_URL=http://localhost:3000
+      - APP_ARGS=--ignore-certificate-errors
+      - PORT=3000
+    shm_size: 512m
 ```
-
-Do not only copy `docker-compose.yml`, as it relies on configurations from `Caddyfile`.
+Start the service:
+```bash
+docker-compose up -d
+```
 
 ## 2. Usage
 
-### 2.1 Get Token
+### 2.1 Obtain Token
 ```bash
-curl "http://localhost:8199/token"
+curl "http://SERVER_IP:8199/token"
 ```
 
-### 2.2 Get Token Pool Capacity
+### 2.2 Check Token Pool Capacity
 ```bash
-curl "http://localhost:8199/ping"
+curl "http://SERVER_IP:8199/ping"
 ```
 
-### 2.3 Hang Up Actively
+### 2.3 Initiate Hanging
 ```bash
-curl "http://localhost:8199/?delay=10"
+curl "http://SERVER_IP:8199/?delay=10"
 ```
 
-## 3. Adding Hanging Nodes
+## 3. Add Hanging Nodes
+Create the `docker-compose.yml` file:
+```yaml
+version: '3'
+services:
+  token-pusher:
+    image: xyhelper/xyhelper-arkose-browser:latest
+    environment:
+      - VNC_PW=xyhelper
+      - LAUNCH_URL=http://localhost:3000
+      - APP_ARGS=--ignore-certificate-errors
+      - PORT=3000
+      - FORWARD_URL=https://chatarkose.xyhelper.cn/pushtoken # Replace with your own token pool address
+    shm_size: 512m
+```
+Start the service:
 ```bash
-git clone https://github.com/xyhelper/xyhelper-arkose.git
-cd xyhelper-arkose
+docker-compose up -d
 ```
 
-Modify `docker-compose.yml` and remove the '#' from the line: `- FORWORD_URL=https://chatarkose.xyhelper.cn/pushtoken`.
+For multiple nodes, you can use the `docker-compose scale` command:
+```bash
+docker compose up -d --scale token-pusher=5
+```
 
-Execute `./deploy.sh`
+## 4. Manage Chrome
 
-## 4. Managing Chrome
-
-Login URL: https://localhost:6901
+Login URL: https://SERVER_IP:6901
 
 Username: kasm_user
 
@@ -49,6 +80,6 @@ Default Password: xyhelper
 
 ## 5. Public Nodes
 
-Get Token URL: https://chatarkose.xyhelper.cn/token
+Obtain token address: https://chatarkose.xyhelper.cn/token
 
-Check Token Pool Capacity: https://chatarkose.xyhelper.cn/ping
+Check token pool capacity: https://chatarkose.xyhelper.cn/ping
