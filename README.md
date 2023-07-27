@@ -8,14 +8,24 @@
 不再提供P项目BYPASS功能,没有原因,请不要问为什么
 
 ## 1. 安装
-```bash
-git clone https://github.com/xyhelper/xyhelper-arkose.git
-cd xyhelper-arkose
-./deploy.sh
+创建`docker-compose.yml`文件
+```yaml
+  broswer:
+    image: xyhelper/xyhelper-arkose-browser:latest
+    ports:
+      - "6901:6901"
+      - "8199:3000"
+    environment:
+      - VNC_PW=xyhelper
+      - LAUNCH_URL=http://localhost:3000
+      - APP_ARGS=--ignore-certificate-errors
+      - PORT=3000
+    shm_size: 512m
 ```
-
-不要仅复制`docker-compose.yml`，因为`docker-compose.yml`中用到了`Caddyfile`中的配置
-
+启动
+```bash
+docker-compose up -d
+```
 ## 2. 使用
 
 ### 2.1 获取token
@@ -34,14 +44,27 @@ curl "http://服务器IP:8199/?delay=10"
 ```
 
 ## 3. 增加挂机节点
+创建`docker-compose.yml`文件
+```yaml
+  token-pusher:
+    image: xyhelper/xyhelper-arkose-browser:latest
+    environment:
+      - VNC_PW=xyhelper
+      - LAUNCH_URL=http://localhost:3000
+      - APP_ARGS=--ignore-certificate-errors
+      - PORT=3000
+      - FORWORD_URL=https://arkose.xyhelper.cn/pushtoken # 修改为自己的token池地址
+    shm_size: 512m
+```
+启动
 ```bash
-git clone https://github.com/xyhelper/xyhelper-arkose.git
-cd xyhelper-arkose
+docker-compose up -d
 ```
 
-修改`docker-compose.yml` 取消   # - FORWORD_URL=https://chatarkose.xyhelper.cn/pushtoken 的注释
-
-执行`./deploy.sh`
+多个节点可以使用`docker-compose scale`命令
+```bash
+docker-compose scale token-pusher=10
+```
 
 ## 4. 管理chrome
 
