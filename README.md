@@ -57,7 +57,7 @@ services:
       - LAUNCH_URL=http://localhost:3000
       - APP_ARGS=--ignore-certificate-errors
       - PORT=3000
-      - FORWORD_URL=https://arkose.xyhelper.cn/pushtoken # 修改为自己的token池地址
+      - FORWORD_URL=https://chatarkose.xyhelper.cn/pushtoken # 修改为自己的token池地址
     shm_size: 512m
 ```
 启动
