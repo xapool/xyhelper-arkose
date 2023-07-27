@@ -137,5 +137,8 @@ func getRealIP(req *ghttp.Request) string {
 	if index := strings.Index(ip, ":"); index != -1 {
 		ip = ip[0:index]
 	}
+	if ip == "[" {
+		ip = req.GetClientIp()
+	}
 	return ip
 }
