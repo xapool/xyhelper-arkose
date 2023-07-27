@@ -67,7 +67,7 @@ docker-compose up -d
 
 多个节点可以使用`docker-compose scale`命令
 ```bash
-docker-compose scale token-pusher=10
+docker-compose -d --scale token-pusher=10
 ```
 
 ## 4. 管理chrome
