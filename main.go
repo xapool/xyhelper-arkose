@@ -29,8 +29,8 @@ func main() {
 			panic(err)
 		}
 	}
-	s.EnableHTTPS("./resource/certs/server.crt", "./resource/certs/server.key")
-	s.SetHTTPSPort(443)
+	// s.EnableHTTPS("./resource/certs/server.crt", "./resource/certs/server.key")
+	// s.SetHTTPSPort(443)
 
 	s.SetPort(config.Port)
 	s.SetServerRoot("resource/public")
