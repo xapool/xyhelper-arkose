@@ -10,6 +10,8 @@
 ## 1. 安装
 创建`docker-compose.yml`文件
 ```yaml
+version: '3'
+services:
   broswer:
     image: xyhelper/xyhelper-arkose-browser:latest
     ports:
@@ -46,6 +48,8 @@ curl "http://服务器IP:8199/?delay=10"
 ## 3. 增加挂机节点
 创建`docker-compose.yml`文件
 ```yaml
+version: '3'
+services:
   token-pusher:
     image: xyhelper/xyhelper-arkose-browser:latest
     environment:
