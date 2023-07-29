@@ -9,6 +9,7 @@ require (
 )
 
 require (
+	github.com/2captcha/2captcha-go v1.1.2 // indirect
 	github.com/BurntSushi/toml v1.1.0 // indirect
 	github.com/chromedp/sysutil v1.0.0 // indirect
 	github.com/clbanning/mxj/v2 v2.5.5 // indirect

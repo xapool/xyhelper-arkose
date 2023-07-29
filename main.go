@@ -10,6 +10,7 @@ import (
 	"xyhelper-arkose/config"
 	"xyhelper-arkose/handel"
 
+	api2captcha "github.com/2captcha/2captcha-go"
 	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
@@ -57,6 +58,22 @@ func main() {
 		ctx := r.Context()
 
 		var token interface{}
+		if config.TokenQueue.Size() == 0 {
+			arkoseToken, err := GetTokenFromSolver(ctx)
+			if err != nil || arkoseToken == "" {
+				r.Response.WriteJson(g.Map{
+					"code": 0,
+					"msg": "token is empty",
+				})
+				return
+			}
+			r.Response.WriteJson(g.Map{
+				"token": arkoseToken,
+				"created": time.Now().Unix(),
+			})
+			g.Log().Info(ctx, "get token from 2Captcha", arkoseToken)
+			return
+		}
 
 		for config.TokenQueue.Size() > 0 {
 			token = config.TokenQueue.Pop()
@@ -188,4 +205,30 @@ func getRealIP(req *ghttp.Request) string {
 		ip = req.GetClientIp()
 	}
 	return ip
+}
+
+func GetTokenFromSolver(ctx g.Ctx) (string, error) {
+	captchaSolver := g.Cfg().MustGetWithEnv(ctx, "CAPTCHA_SOLVER").String()
+	if captchaSolver != "2Captcha" {
+		return "", nil
+	}
+
+	captchaSolverKey := g.Cfg().MustGetWithEnv(ctx, "CAPTCHA_SOLVER_KEY").String()
+	client := api2captcha.NewClient(captchaSolverKey)
+	cap := api2captcha.FunCaptcha {
+		SiteKey: "35536E1E-65B4-4D96-9D97-6ADB7EFF8147",
+		Url: "https://chat.openai.com",
+		Surl: "https://client-api.arkoselabs.com",
+		UserAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+		// Data: map[string]string{"anyKey":"anyValue"},
+    }
+	req := cap.ToRequest()
+	// req.SetProxy("HTTPS", "login:password@IP_address:PORT")
+	arkoseToken, err := client.Solve(req)
+	if err != nil {
+		g.Log().Error(ctx, "get token from 2Capatch failed", err)
+		return "", nil
+	}
+
+	return arkoseToken, nil
 }
