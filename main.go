@@ -4,6 +4,8 @@ import (
 	// _ "xyhelper-arkose/ja3proxy"
 
 	"context"
+	"encoding/json"
+	"errors"
 	"strings"
 	"time"
 	"xyhelper-arkose/api"
@@ -26,7 +28,7 @@ func main() {
 	// 每小时清理一次
 	if g.Cfg().MustGetWithEnv(ctx, "FORWORD_URL").String() == "" {
 		_, err := gcron.AddSingleton(ctx, "0 0 * * * *", func(ctx context.Context) {
-			tokenURI := "http://127.0.0.1:" + gconv.String(config.Port) + "/token"
+			tokenURI := "http://127.0.0.1:" + gconv.String(config.Port) + "/cleantoken"
 			g.Log().Print(ctx, "Every hour", tokenURI)
 			g.Client().Get(ctx, tokenURI)
 			api.RefreshPayloadFromMaster(ctx)
@@ -57,13 +59,32 @@ func main() {
 	s.BindHandler("/token", func(r *ghttp.Request) {
 		ctx := r.Context()
 
-		var token interface{}
-		if config.TokenQueue.Size() == 0 {
+		// get token from local tokenqueue
+		result, err := GetTokenFromQueue(ctx)
+		if err != nil {
+			// get from public arkose url when get from local failed
+			fallbackURL := g.Cfg().MustGetWithEnv(ctx, "ARKOSE_TOKEN_FALLBACK_URL").String()
+			if fallbackURL != "" {
+				resp, err := g.Client().Get(ctx, fallbackURL)
+				if err == nil && resp.StatusCode == 200 {
+					defer resp.Body.Close()
+					responseMap := make(map[string]interface{})
+					if err := json.NewDecoder(resp.Body).Decode(&responseMap); err == nil {
+						arkoseToken, ok := responseMap["token"]
+						if ok && arkoseToken != "" {
+							r.Response.WriteJson(responseMap)
+							g.Log().Info(ctx, "get token from fallback url", arkoseToken)
+							return
+						}
+					}
+				}
+			}
+			// second get from 2Captcha
 			arkoseToken, err := GetTokenFromSolver(ctx)
 			if err != nil || arkoseToken == "" {
 				r.Response.WriteJson(g.Map{
 					"code": 0,
-					"msg": "token is empty",
+					"msg":  err.Error(),
 				})
 				return
 			}
@@ -74,49 +95,7 @@ func main() {
 			g.Log().Info(ctx, "get token from 2Captcha", arkoseToken)
 			return
 		}
-
-		for config.TokenQueue.Size() > 0 {
-			token = config.TokenQueue.Pop()
-			var tokenStuct config.Token
-			gconv.Struct(token, &tokenStuct)
-			if time.Now().Unix()-tokenStuct.Created < int64(config.TokenExpire) {
-				break
-			} else {
-				g.Log().Info(ctx, "token is expired,will pop one ", config.TokenQueue.Size(), tokenStuct.Created, config.TokenExpire)
-				token = nil
-			}
-		}
-
-		if token == nil {
-			// g.Log().Info(ctx, "token is empty,will get one")
-			payload, err := api.GetPayloadFromCache(ctx)
-			if err != nil {
-				g.Log().Error(ctx, err)
-				r.Response.WriteJson(g.Map{
-					"code": 0,
-					"msg":  err.Error(),
-				})
-				return
-			}
-			newtoken, err := api.GetTokenByPayload(ctx, payload.Payload, payload.UserAgent)
-			if err != nil {
-				g.Log().Error(ctx, err)
-				r.Response.WriteJson(g.Map{
-					"code": 0,
-					"msg":  err.Error(),
-				})
-				return
-			}
-			r.Response.WriteJson(g.Map{
-				"code":    1,
-				"token":   newtoken,
-				"created": time.Now().Unix(),
-			})
-			g.Log().Info(ctx, getRealIP(r), "get new token", newtoken)
-			return
-		}
-		g.Log().Info(ctx, getRealIP(r), "get token from queue", token)
-		r.Response.WriteJson(token)
+		r.Response.WriteJson(result)
 	})
 	s.BindHandler("/payload", func(r *ghttp.Request) {
 		ctx := r.Context()
@@ -178,6 +157,20 @@ func main() {
 			"msg":  "success",
 		})
 	})
+	s.BindHandler("/cleantoken", func(r *ghttp.Request) {
+		ctx := r.Context()
+
+		result, err := GetTokenFromQueue(ctx)
+		g.Log().Info(ctx, "clean done，now pool size is", config.TokenQueue.Size())
+		if err != nil {
+			r.Response.WriteJson(g.Map{
+				"code": 0,
+				"msg":  err.Error(),
+			})
+			return
+		}
+		r.Response.WriteJson(result)
+	})
 	s.Run()
 }
 
@@ -207,6 +200,46 @@ func getRealIP(req *ghttp.Request) string {
 	return ip
 }
 
+func GetTokenFromQueue(ctx g.Ctx) (map[string]interface{}, error) {
+	var token interface{}
+
+	for config.TokenQueue.Size() > 0 {
+		token = config.TokenQueue.Pop()
+		var tokenStuct config.Token
+		gconv.Struct(token, &tokenStuct)
+		if time.Now().Unix()-tokenStuct.Created < int64(config.TokenExpire) {
+			break
+		} else {
+			g.Log().Info(ctx, "token is expired,will pop one ", config.TokenQueue.Size(), tokenStuct.Created, config.TokenExpire)
+			token = nil
+		}
+	}
+
+	if token == nil {
+		g.Log().Info(ctx, "token is empty, will get one")
+		payload, err := api.GetPayloadFromCache(ctx)
+		if err != nil {
+			g.Log().Error(ctx, err)
+			return "", err
+		}
+		newtoken, err := api.GetTokenByPayload(ctx, payload.Payload, payload.UserAgent)
+		if err != nil {
+			g.Log().Error(ctx, err)
+			return "", err
+		}
+		token := g.Map{
+			"code":    1,
+			"token":   newtoken,
+			"created": time.Now().Unix(),
+		}
+	}
+
+	var result map[string]interface{}
+	gconv.Struct(token, &result)
+
+	return result, nil
+}
+
 func GetTokenFromSolver(ctx g.Ctx) (string, error) {
 	captchaSolver := g.Cfg().MustGetWithEnv(ctx, "CAPTCHA_SOLVER").String()
 	if captchaSolver != "2Captcha" {
@@ -221,7 +254,7 @@ func GetTokenFromSolver(ctx g.Ctx) (string, error) {
 		Surl: "https://client-api.arkoselabs.com",
 		UserAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
 		// Data: map[string]string{"anyKey":"anyValue"},
-    }
+	}
 	req := cap.ToRequest()
 	// req.SetProxy("HTTPS", "login:password@IP_address:PORT")
 	arkoseToken, err := client.Solve(req)
