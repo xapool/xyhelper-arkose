@@ -26,4 +26,4 @@ key:
 
 PORT: 3000
 
-FORWORD_URL: https://chatarkose.xyhelper.cn/pushtoken
+# FORWORD_URL: https://chatarkose.xyhelper.cn/pushtoken

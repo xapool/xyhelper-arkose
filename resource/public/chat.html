@@ -112,6 +112,11 @@
 
         getToken(); // 递归调用函数以实现重复执行
     }, delayInMilliseconds);
+
+    // 每30分钟刷新一次页面
+    setTimeout(() => {
+        window.location.reload();
+    }, 30 * 60 * 1000);
 }
 
     

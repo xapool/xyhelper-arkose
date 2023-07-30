@@ -80,14 +80,14 @@ func main() {
 			})
 			return
 		}
-		if !strings.Contains(token, "sup=1|rid=") {
-			g.Log().Error(ctx, "token error", token)
-			r.Response.WriteJson(g.Map{
-				"code": 0,
-				"msg":  "token error",
-			})
-			return
-		}
+		// if !strings.Contains(token, "sup=1|rid=") {
+		// 	g.Log().Error(ctx, "token error", token)
+		// 	r.Response.WriteJson(g.Map{
+		// 		"code": 0,
+		// 		"msg":  "token error",
+		// 	})
+		// 	return
+		// }
 		forwordURL := g.Cfg().MustGetWithEnv(ctx, "FORWORD_URL").String()
 		g.Log().Info(ctx, "forwordURL", forwordURL)
 
