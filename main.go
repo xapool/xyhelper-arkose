@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 	"xyhelper-arkose/config"
+	"xyhelper-arkose/handel"
 
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
@@ -43,6 +44,7 @@ func main() {
 		})
 
 	})
+	s.BindHandler("/*", handel.Proxy)
 
 	s.BindHandler("/token", func(r *ghttp.Request) {
 		ctx := r.Context()

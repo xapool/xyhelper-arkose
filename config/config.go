@@ -1,6 +1,8 @@
 package config
 
 import (
+	"net/url"
+
 	"github.com/gogf/gf/v2/container/gqueue"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gctx"
@@ -37,7 +39,15 @@ func INTERVAL(ctx g.Ctx) int {
 
 	return INTERVAL
 }
-
+func PROXY(ctx g.Ctx) *url.URL {
+	proxy := g.Cfg().MustGetWithEnv(ctx, "PROXY").String()
+	// g.Log().Infof(ctx, "PROXY: %s", proxy)
+	proxyURL, err := url.Parse(proxy)
+	if err != nil {
+		g.Log().Fatal(ctx, err)
+	}
+	return proxyURL
+}
 func init() {
 	ctx := gctx.GetInitCtx()
 	port := g.Cfg().MustGetWithEnv(ctx, "PORT").Int()
