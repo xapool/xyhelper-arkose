@@ -29,6 +29,7 @@ require (
 	github.com/mattn/go-colorable v0.1.9 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
+	github.com/median/captchago v1.2.1 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/stretchr/testify v1.8.0 // indirect
 	go.opentelemetry.io/otel v1.7.0 // indirect

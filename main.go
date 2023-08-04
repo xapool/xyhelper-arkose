@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 	"xyhelper-arkose/api"
@@ -20,6 +21,7 @@ import (
 	"github.com/gogf/gf/v2/os/gctx"
 	"github.com/gogf/gf/v2/os/gtime"
 	"github.com/gogf/gf/v2/util/gconv"
+	"github.com/median/captchago"
 )
 
 func main() {
@@ -79,7 +81,7 @@ func main() {
 					}
 				}
 			}
-			// second get from 2Captcha
+			// second get from solver
 			arkoseToken, err := GetTokenFromSolver(ctx)
 			if err != nil || arkoseToken == "" {
 				r.Response.WriteJson(g.Map{
@@ -92,7 +94,7 @@ func main() {
 				"token": arkoseToken,
 				"created": time.Now().Unix(),
 			})
-			g.Log().Info(ctx, "get token from 2Captcha", arkoseToken)
+			g.Log().Info(ctx, "get token from solver", arkoseToken)
 			return
 		}
 		r.Response.WriteJson(result)
@@ -242,12 +244,26 @@ func GetTokenFromQueue(ctx g.Ctx) (map[string]interface{}, error) {
 
 func GetTokenFromSolver(ctx g.Ctx) (string, error) {
 	captchaSolver := g.Cfg().MustGetWithEnv(ctx, "CAPTCHA_SOLVER").String()
-	if captchaSolver != "2Captcha" {
-		return "", nil
+	captchaSolverKey := g.Cfg().MustGetWithEnv(ctx, "CAPTCHA_SOLVER_KEY").String()
+
+	var arkoseToken string
+	var err error
+
+	switch captchaSolver {
+	case "CapSolver":
+		arkoseToken, err = GetTokenFromCapSolver(ctx, captchaSolverKey)
+	case "2Captcha":
+		arkoseToken, err = GetTokenFrom2Captcha(ctx, captchaSolverKey)
 	}
 
-	captchaSolverKey := g.Cfg().MustGetWithEnv(ctx, "CAPTCHA_SOLVER_KEY").String()
-	client := api2captcha.NewClient(captchaSolverKey)
+	if err != nil {
+		return "", err
+	}
+	return arkoseToken, nil
+}
+
+func GetTokenFrom2Captcha(ctx g.Ctx, api_key string) (string, error) {
+	client := api2captcha.NewClient(api_key)
 	cap := api2captcha.FunCaptcha {
 		SiteKey: "35536E1E-65B4-4D96-9D97-6ADB7EFF8147",
 		Url: "https://chat.openai.com",
@@ -260,8 +276,30 @@ func GetTokenFromSolver(ctx g.Ctx) (string, error) {
 	arkoseToken, err := client.Solve(req)
 	if err != nil {
 		g.Log().Error(ctx, "get token from 2Capatch failed", err)
-		return "", nil
+		return "", err
 	}
 
+	g.Log().Info(ctx, "get token from 2Captcha")
 	return arkoseToken, nil
+}
+
+func GetTokenFromCapSolver(ctx g.Ctx, api_key string) (string, error) {
+	solver, err := captchago.New(captchago.CapSolver, api_key)
+	if err != nil {
+		return "", err
+	}
+
+	sol, err := solver.FunCaptcha(captchago.FunCaptchaOptions{
+		PageURL: "https://client-api.arkoselabs.com",
+		PublicKey: "35536E1E-65B4-4D96-9D97-6ADB7EFF8147",
+		Subdomain: "https://chat.openai.com",
+		UserAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	g.Log().Info(ctx, fmt.Sprintf("get token from CapSolver solved in %v ms", sol.Speed))
+	return sol.Text, nil
 }
