@@ -53,4 +53,4 @@ curl "http://服务器IP:8199/payload"
 
 ## 加入交流群
 
-![微信](https://xyhelper.cn/xyhelperkf.png)
+![微信](https://xyhelper.github.io/xyhelperkf.png)
