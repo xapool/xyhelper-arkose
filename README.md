@@ -51,4 +51,6 @@ curl "http://服务器IP:8199/payload"
 
 获取 token 地址：https://chatarkose.xyhelper.cn/token
 
-查询 token 池容量：https://chatarkose.xyhelper.cn/ping
+## 加入交流群
+
+![微信](https://xyhelper.cn/xyhelperkf.png)
