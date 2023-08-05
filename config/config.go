@@ -5,15 +5,16 @@ import (
 
 	"github.com/gogf/gf/v2/container/gqueue"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/os/gcache"
 	"github.com/gogf/gf/v2/os/gctx"
 )
 
 var (
-	TokenExpire = 60 * 20
+	TokenExpire = 15
 	TokenQueue  = gqueue.New()
-	Port        = 8199
-	PageName    = "chat.html"
+	Port        = 3000
 	Proxy       = ""
+	Cache       = gcache.New()
 )
 
 type Payload struct {
@@ -58,10 +59,6 @@ func init() {
 	tokenExpire := g.Cfg().MustGetWithEnv(ctx, "TOKEN_EXPIRE").Int()
 	if tokenExpire != 0 {
 		TokenExpire = tokenExpire
-	}
-	pageName := g.Cfg().MustGetWithEnv(ctx, "PAGE_NAME").String()
-	if pageName != "" {
-		PageName = pageName
 	}
 	proxy := g.Cfg().MustGetWithEnv(ctx, "PROXY").String()
 	if proxy != "" {

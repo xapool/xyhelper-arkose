@@ -6,13 +6,16 @@ import (
 	"context"
 	"strings"
 	"time"
+	"xyhelper-arkose/api"
 	"xyhelper-arkose/config"
 	"xyhelper-arkose/handel"
 
+	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/gogf/gf/v2/os/gcron"
 	"github.com/gogf/gf/v2/os/gctx"
+	"github.com/gogf/gf/v2/os/gtime"
 	"github.com/gogf/gf/v2/util/gconv"
 )
 
@@ -64,13 +67,49 @@ func main() {
 		}
 
 		if token == nil {
+			g.Log().Info(ctx, "token is empty,will get one")
+			payload, err := api.GetPayloadFromCache(ctx)
+			if err != nil {
+				g.Log().Error(ctx, err)
+				r.Response.WriteJson(g.Map{
+					"code": 0,
+					"msg":  err.Error(),
+				})
+				return
+			}
+			newtoken, err := api.GetTokenByPayload(ctx, payload.Payload)
+			if err != nil {
+				g.Log().Error(ctx, err)
+				r.Response.WriteJson(g.Map{
+					"code": 0,
+					"msg":  err.Error(),
+				})
+				return
+			}
 			r.Response.WriteJson(g.Map{
-				"code": 0,
-				"msg":  "token is empty",
+				"code":    1,
+				"token":   newtoken,
+				"created": time.Now().Unix(),
 			})
 			return
 		}
 		r.Response.WriteJson(token)
+	})
+	s.BindHandler("/payload", func(r *ghttp.Request) {
+		ctx := r.Context()
+		r.Cookie.Set("uid", gtime.Now().String())
+
+		payload, err := api.GetPayloadFromCache(ctx)
+		if err != nil {
+			g.Log().Error(ctx, err)
+			r.Response.WriteJson(g.Map{
+				"code": 0,
+				"msg":  err.Error(),
+			})
+			return
+		}
+		r.Response.WriteJson(gjson.New(payload))
+
 	})
 	s.BindHandler("/pushtoken", func(r *ghttp.Request) {
 		// g.Dump(r.Header)

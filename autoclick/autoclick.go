@@ -69,7 +69,7 @@ func AutoClick() (payload, token string) {
 	// chromedp.ProxyServer("http://127.0.0.1:7006")
 	chromedp.Run(ctx, network.Enable(), chromedp.ActionFunc(func(ctx context.Context) error {
 		// 打开 http://localhost:8199
-		siteUrl := "https://chat.openai.com/" + config.PageName
+		siteUrl := "https://chat.openai.com/"
 		g.Log().Info(ctx, "打开 ", siteUrl)
 		chromedp.Navigate(siteUrl).Do(ctx)
 

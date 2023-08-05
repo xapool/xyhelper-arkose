@@ -7,8 +7,11 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
+	"time"
 	"xyhelper-arkose/config"
 
+	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/gogf/gf/v2/text/gstr"
@@ -25,12 +28,10 @@ func init() {
 
 func Proxy(r *ghttp.Request) {
 	ctx := r.Context()
-	// UpStream = "https://openai-api-proxy.xyhelper.cn"
-	// if r.URL.Path == "/" {
-	// 	r.Response.Writer.Write([]byte("Hello XyHelper"))
-
-	// 	return
-	// }
+	payload := &config.Payload{
+		Payload: "",
+		Created: time.Now().Unix(),
+	}
 	u, _ := url.Parse(UpStream)
 	proxy := httputil.NewSingleHostReverseProxy(u)
 	// g.Dump(config.PROXY(ctx))
@@ -45,9 +46,6 @@ func Proxy(r *ghttp.Request) {
 
 	proxy.Director = func(req *http.Request) {
 		requrl := r.Request.URL.Path
-		// requrl = gstr.Replace(requrl, "%5B", "[", -1)
-		// requrl = gstr.Replace(requrl, "%5D", "]", -1)
-		// g.Log().Info(ctx, "requrl", requrl)
 		if requrl == "/fc/gt2/public_key/35536E1E-65B4-4D96-9D97-6ADB7EFF8147" {
 			body := r.GetBodyString()
 			bodyArray := gstr.Split(body, "&")
@@ -56,15 +54,11 @@ func Proxy(r *ghttp.Request) {
 			for i, v := range bodyArray {
 				if gstr.HasPrefix(v, "site=http") {
 					bodyArray[i] = "site=http%3A%2F%2Flocalhost%3A3000"
-					// bodyArray[i] = "site=https%3A%2F%2F1231313123.hjmcloud.cn"
 				}
 			}
 			body = gstr.Join(bodyArray, "&")
 
-			// body = gstr.Replace(body, "8081", "3000", -1)
-			// body = gurl.Encode(body)
-
-			// g.Log().Info(ctx, "body", body)
+			payload.Payload = body
 			req.Body = io.NopCloser(bytes.NewReader(gconv.Bytes(body)))
 			req.ContentLength = int64(len(body))
 		}
@@ -93,28 +87,40 @@ func Proxy(r *ghttp.Request) {
 		req.Header.Del("X-Forwarded-Port")
 		req.Header.Del("X-Forwarded-Server")
 		req.Header.Del("X-Real-Ip")
-		// g.Dump(req.Header)
+		req.Header.Del("Accept-Encoding")
+		g.Dump(req.Header)
 
 	}
 	proxy.ModifyResponse = func(resp *http.Response) error {
-		// 修改cookiedomain 为当前域名
-		// for _, cookie := range resp.Cookies() {
-		// 	// cookie.Domain = r.Request.Host
-		// 	cookie.Domain = "localhost"
-		// 	cookie.Path = "/"
-		// 	cookie.Secure = false
-		// 	cookie.HttpOnly = false
-		// 	g.Dump(cookie)
-		// }
-
-		// 转换 %5B %5D 为 [ ]
-		// requrl, _ = url.QueryUnescape(requrl)
 
 		// 解码 url
 		if resp.StatusCode <= 400 {
 			g.Log().Info(r.Context(), resp.StatusCode, resp.Request.URL.Path)
+			// 获取返回的body
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+			g.Log().Info(r.Context(), "body", string(body))
+			// 解压缩body
+
+			// g.Dump(string(unzipbody))
+			token := gjson.New(body).Get("token").String()
+			g.Log().Info(r.Context(), "token", token)
+			if strings.Contains(token, "sup=1|rid=") {
+				// 获取请求的body
+				err := config.Cache.Set(r.Context(), "payload", payload, 0)
+				if err != nil {
+					return err
+				}
+				g.Log().Info(r.Context(), "refresh payload cache", payload)
+
+			}
+			// 将原始body 返回
+			resp.Body = io.NopCloser(bytes.NewReader(body))
 		} else {
 			g.Log().Warning(r.Context(), resp.StatusCode, resp.Request.URL.Path)
+
 		}
 		return nil
 	}
