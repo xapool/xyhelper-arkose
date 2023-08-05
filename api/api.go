@@ -29,10 +29,13 @@ var (
 	}
 )
 
-func GetTokenByPayload(ctx g.Ctx, payload string) (string, error) {
+func GetTokenByPayload(ctx g.Ctx, payload string, userAgent string) (string, error) {
 	client := g.Client()
 	client.SetHeaderMap(headers)
-	client.SetProxy(config.Proxy)
+	client.SetHeader("User-Agent", userAgent)
+	if config.Proxy != "" {
+		client.SetProxy(config.Proxy)
+	}
 	response, err := client.Post(ctx, challengeUrl, payload)
 	if err != nil {
 		log.Panic(err)
@@ -46,7 +49,7 @@ func GetTokenByPayload(ctx g.Ctx, payload string) (string, error) {
 	if strings.Contains(token, "sup=1|rid=") {
 		return token, nil
 	}
-	return "", gerror.New("获取token失败")
+	return "", gerror.New("获取token失败:" + response.ReadAllString())
 
 }
 

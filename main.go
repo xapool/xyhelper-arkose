@@ -47,6 +47,7 @@ func main() {
 		})
 
 	})
+	s.BindHandler("/", api.Index)
 	s.BindHandler("/*", handel.Proxy)
 
 	s.BindHandler("/token", func(r *ghttp.Request) {
@@ -77,7 +78,7 @@ func main() {
 				})
 				return
 			}
-			newtoken, err := api.GetTokenByPayload(ctx, payload.Payload)
+			newtoken, err := api.GetTokenByPayload(ctx, payload.Payload, payload.UserAgent)
 			if err != nil {
 				g.Log().Error(ctx, err)
 				r.Response.WriteJson(g.Map{

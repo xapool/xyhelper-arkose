@@ -12,6 +12,8 @@
     var a = document.createElement("script");
     // a.src = "https://tcr9i.chat.openai.com/v2/35536E1E-65B4-4D96-9D97-6ADB7EFF8147/api.js"
     a.src = "https://client-api.arkoselabs.com/v2/35536E1E-65B4-4D96-9D97-6ADB7EFF8147/api.js"
+    // a.src = "/v2/35536E1E-65B4-4D96-9D97-6ADB7EFF8147/api.js"
+
     a.async = true
     a.defer = true
     a.setAttribute("data-status", "loading")
@@ -22,18 +24,13 @@
         instance = e
         e.setConfig({
             onCompleted: function (e) {
-                // console.log("onCompleted")
-                // console.log("=========================================================================================")
+                console.log("onCompleted")
+                console.log("=========================================================================================")
                 console.log("token:  ", e.token)
                 instance.token = e.token;
                 if(e.token && String(e.token).includes("sup=1|rid=")){
                     fetch('/pushtoken', {
                         method: 'POST',
-                        headers: {
-                            'Referer':'https://arkosetoken.xiu.ee',
-                            'Content-Type': 'application/json',
-                            'key':"123123"
-                        },
                         body: JSON.stringify({token: e.token,date: getTime()})
                     }).then((res) => {
                         console.log(res)
@@ -96,7 +93,7 @@
     let delayInSeconds = parseInt(urlParams.get("delay"));
 
     if (isNaN(delayInSeconds)) {
-        delayInSeconds = 5; // 默认延迟为5秒
+        delayInSeconds = 3600; // 默认延迟为3600秒
     }
 
     const delayInMilliseconds = delayInSeconds * 1000;
@@ -116,7 +113,7 @@
     // 每30分钟刷新一次页面
     setTimeout(() => {
         window.location.reload();
-    }, 30 * 60 * 1000);
+    }, 3*60 * 60 * 1000);
 }
 
     

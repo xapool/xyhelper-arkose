@@ -18,8 +18,9 @@ var (
 )
 
 type Payload struct {
-	Payload string `json:"payload"`
-	Created int64  `json:"created"`
+	Payload   string `json:"payload"`
+	UserAgent string `json:"user_agent"`
+	Created   int64  `json:"created"`
 }
 
 type Token struct {

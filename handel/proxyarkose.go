@@ -28,6 +28,7 @@ func init() {
 
 func Proxy(r *ghttp.Request) {
 	ctx := r.Context()
+	trutHost := r.Host == "localhost:3000"
 	payload := &config.Payload{
 		Payload: "",
 		Created: time.Now().Unix(),
@@ -59,6 +60,7 @@ func Proxy(r *ghttp.Request) {
 			body = gstr.Join(bodyArray, "&")
 
 			payload.Payload = body
+			payload.UserAgent = r.Header.Get("User-Agent")
 			req.Body = io.NopCloser(bytes.NewReader(gconv.Bytes(body)))
 			req.ContentLength = int64(len(body))
 		}
@@ -88,10 +90,15 @@ func Proxy(r *ghttp.Request) {
 		req.Header.Del("X-Forwarded-Server")
 		req.Header.Del("X-Real-Ip")
 		req.Header.Del("Accept-Encoding")
-		g.Dump(req.Header)
+		// g.Dump(req.Header)
 
 	}
 	proxy.ModifyResponse = func(resp *http.Response) error {
+		cookieStr := resp.Header.Get("Set-Cookie")
+		// 移除域名限制
+		cookieStr = strings.Replace(cookieStr, "Domain=.arkoselabs.com;", "", -1)
+		// 重写cookie
+		resp.Header.Set("Set-Cookie", cookieStr)
 
 		// 解码 url
 		if resp.StatusCode <= 400 {
@@ -107,7 +114,7 @@ func Proxy(r *ghttp.Request) {
 			// g.Dump(string(unzipbody))
 			token := gjson.New(body).Get("token").String()
 			g.Log().Info(r.Context(), "token", token)
-			if strings.Contains(token, "sup=1|rid=") {
+			if strings.Contains(token, "sup=1|rid=") && trutHost {
 				// 获取请求的body
 				err := config.Cache.Set(r.Context(), "payload", payload, 0)
 				if err != nil {
