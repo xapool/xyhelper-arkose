@@ -5,7 +5,6 @@ import (
 
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -62,7 +61,7 @@ func main() {
 		ctx := r.Context()
 
 		// get token from local tokenqueue
-		result, err := GetTokenFromQueue(ctx)
+		result, err := GetTokenFromQueue(ctx, r)
 		if err != nil {
 			// get from public arkose url when get from local failed
 			fallbackURL := g.Cfg().MustGetWithEnv(ctx, "ARKOSE_TOKEN_FALLBACK_URL").String()
@@ -75,7 +74,7 @@ func main() {
 						arkoseToken, ok := responseMap["token"]
 						if ok && arkoseToken != "" {
 							r.Response.WriteJson(responseMap)
-							g.Log().Info(ctx, "get token from fallback url", arkoseToken)
+							g.Log().Info(ctx, getRealIP(r), "get token from fallback url", arkoseToken)
 							return
 						}
 					}
@@ -94,7 +93,7 @@ func main() {
 				"token": arkoseToken,
 				"created": time.Now().Unix(),
 			})
-			g.Log().Info(ctx, "get token from solver", arkoseToken)
+			g.Log().Info(ctx, getRealIP(r), "get token from solver", arkoseToken)
 			return
 		}
 		r.Response.WriteJson(result)
@@ -162,8 +161,8 @@ func main() {
 	s.BindHandler("/cleantoken", func(r *ghttp.Request) {
 		ctx := r.Context()
 
-		result, err := GetTokenFromQueue(ctx)
-		g.Log().Info(ctx, "clean done，now pool size is", config.TokenQueue.Size())
+		result, err := GetTokenFromQueue(ctx, r)
+		g.Log().Info(ctx, "clean done, now pool size is", config.TokenQueue.Size())
 		if err != nil {
 			r.Response.WriteJson(g.Map{
 				"code": 0,
@@ -202,7 +201,7 @@ func getRealIP(req *ghttp.Request) string {
 	return ip
 }
 
-func GetTokenFromQueue(ctx g.Ctx) (map[string]interface{}, error) {
+func GetTokenFromQueue(ctx g.Ctx, req *ghttp.Request) (map[string]interface{}, error) {
 	var token interface{}
 
 	for config.TokenQueue.Size() > 0 {
@@ -218,22 +217,25 @@ func GetTokenFromQueue(ctx g.Ctx) (map[string]interface{}, error) {
 	}
 
 	if token == nil {
-		g.Log().Info(ctx, "token is empty, will get one")
+		// g.Log().Info(ctx, "token is empty, will get one with bda")
 		payload, err := api.GetPayloadFromCache(ctx)
 		if err != nil {
 			g.Log().Error(ctx, err)
-			return "", err
+			return nil, err
 		}
 		newtoken, err := api.GetTokenByPayload(ctx, payload.Payload, payload.UserAgent)
 		if err != nil {
 			g.Log().Error(ctx, err)
-			return "", err
+			return nil, err
 		}
-		token := g.Map{
+		g.Log().Info(ctx, getRealIP(req), "get new token with bda", newtoken)
+		token = g.Map{
 			"code":    1,
 			"token":   newtoken,
 			"created": time.Now().Unix(),
 		}
+	} else {
+		g.Log().Info(ctx, getRealIP(req), "get token from queue", token)
 	}
 
 	var result map[string]interface{}
