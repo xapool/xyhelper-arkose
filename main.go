@@ -47,7 +47,7 @@ func main() {
 		})
 
 	})
-	s.BindHandler("/", api.Index)
+	// s.BindHandler("/", api.Index)
 	s.BindHandler("/*", handel.Proxy)
 
 	s.BindHandler("/token", func(r *ghttp.Request) {

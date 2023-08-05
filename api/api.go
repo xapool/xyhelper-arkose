@@ -42,14 +42,15 @@ func GetTokenByPayload(ctx g.Ctx, payload string, userAgent string) (string, err
 	}
 	defer response.Close()
 	if response.StatusCode != 200 {
-		return "", gerror.New("获取token失败")
+		return "", gerror.New("获取token失败" + response.Status)
 	}
 	// response.RawDump()
-	token := gjson.New(response.ReadAllString()).Get("token").String()
+	resBodyStr := response.ReadAllString()
+	token := gjson.New(resBodyStr).Get("token").String()
 	if strings.Contains(token, "sup=1|rid=") {
 		return token, nil
 	}
-	return "", gerror.New("获取token失败:" + response.ReadAllString())
+	return "", gerror.New("获取token失败:" + resBodyStr)
 
 }
 
