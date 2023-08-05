@@ -28,6 +28,8 @@ func main() {
 			tokenURI := "http://127.0.0.1:" + gconv.String(config.Port) + "/token"
 			g.Log().Print(ctx, "Every hour", tokenURI)
 			g.Client().Get(ctx, tokenURI)
+			api.RefreshPayloadFromMaster(ctx)
+
 		}, "clean")
 		if err != nil {
 			panic(err)
@@ -35,6 +37,7 @@ func main() {
 	}
 	// s.EnableHTTPS("./resource/certs/server.crt", "./resource/certs/server.key")
 	// s.SetHTTPSPort(443)
+	api.RefreshPayloadFromMaster(ctx)
 
 	s.SetPort(config.Port)
 	s.SetServerRoot("resource/public")

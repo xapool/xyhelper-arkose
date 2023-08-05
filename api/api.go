@@ -8,6 +8,7 @@ import (
 	"github.com/gogf/gf/v2/encoding/gjson"
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
+	"github.com/gogf/gf/v2/os/gtime"
 	"github.com/gogf/gf/v2/util/gconv"
 )
 
@@ -32,11 +33,10 @@ var (
 func GetTokenByPayload(ctx g.Ctx, payload string, userAgent string) (string, error) {
 	client := g.Client()
 	client.SetHeaderMap(headers)
-	client.SetHeader("User-Agent", userAgent)
 	if config.Proxy != "" {
 		client.SetProxy(config.Proxy)
 	}
-	response, err := client.Post(ctx, challengeUrl, payload)
+	response, err := client.SetHeader("User-Agent", userAgent).Post(ctx, challengeUrl, payload)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -65,4 +65,25 @@ func GetPayloadFromCache(ctx g.Ctx) (payload config.Payload, err error) {
 	}
 	return payload, nil
 
+}
+
+func RefreshPayloadFromMaster(ctx g.Ctx) (err error) {
+	if g.Cfg().MustGetWithEnv(ctx, "MASTER").String() == "" {
+		res := g.Client().GetVar(ctx, "https://chatarkose.xyhelper.cn/payload")
+		payloadStr := gjson.New(res).Get("payload").String()
+		if payloadStr != "" {
+			payload := &config.Payload{
+				Payload:   payloadStr,
+				UserAgent: gjson.New(res).Get("user_agent").String(),
+				Created:   gtime.Now().Unix(),
+			}
+			config.Cache.Set(ctx, "payload", payload, 0)
+			g.Log().Info(ctx, "从主节点获取payload成功")
+			g.Dump(config.Cache.MustGet(ctx, "payload"))
+			return
+		} else {
+			return gerror.New("从主节点获取payload失败")
+		}
+	}
+	return nil
 }
