@@ -2,15 +2,15 @@
 
 [ENGLISH](README_EN.md)
 
-Automatically obtain Arkose tokens for automated testing.
+Automatically acquire tokens for arkose for automated testing purposes.
 
-## Notice
+## Notification
 
-The P project BYPASS feature is no longer available, and there is no reason for it. Please do not ask why.
+The BYPASS feature for Project P is no longer available, without any specific reasons provided. Please refrain from inquiring about the reason.
 
 ## 1. Installation
 
-Create the `docker-compose.yml` file:
+Create a `docker-compose.yml` file
 
 ```yaml
 version: "3"
@@ -18,10 +18,10 @@ services:
   broswer:
     image: xyhelper/xyhelper-arkose:latest
     ports:
-      - "8199:8199"
+      - "8199:3000"
 ```
 
-Start the container:
+Start
 
 ```bash
 docker-compose up -d
@@ -29,30 +29,26 @@ docker-compose up -d
 
 ## 2. Usage
 
-### 2.1 Get Token
+### 2.1 Obtain token
 
 ```bash
-curl "http://server-IP:8199/token"
+curl "http://serverIP:8199/token"
 ```
 
-### 2.2 Get Token Pool Capacity
+### 2.2 Obtain token pool capacity (Deprecated)
 
 ```bash
-curl "http://server-IP:8199/ping"
+curl "http://serverIP:8199/ping"
 ```
 
-### 2.3 Actively Hang
+### 2.3 View current payload
 
 ```bash
-curl "http://server-IP:8199/?delay=10"
+curl "http://serverIP:8199/payload"
 ```
 
-## 3. How to Generate Tokens
+## 3. Public Nodes
 
-Use a compatible browser to visit `http://server-IP:8199/` and wait for the token to be generated.
+Token acquisition address: https://chatarkose.xyhelper.cn/token
 
-## 4. Public Nodes
-
-Get token address: https://chatarkose.xyhelper.cn/token
-
-Check token pool capacity: https://chatarkose.xyhelper.cn/ping
+Token pool capacity inquiry: https://chatarkose.xyhelper.cn/ping

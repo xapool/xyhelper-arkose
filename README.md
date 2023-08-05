@@ -18,7 +18,7 @@ services:
   broswer:
     image: xyhelper/xyhelper-arkose:latest
     ports:
-      - "8199:8199"
+      - "8199:3000"
 ```
 
 启动
@@ -35,23 +35,19 @@ docker-compose up -d
 curl "http://服务器IP:8199/token"
 ```
 
-### 2.2 获取 token 池容量
+### 2.2 获取 token 池容量(废弃)
 
 ```bash
 curl "http://服务器IP:8199/ping"
 ```
 
-### 2.3 主动挂机
+### 2.3 查看当前 payload
 
 ```bash
-curl "http://服务器IP:8199/?delay=10"
+curl "http://服务器IP:8199/payload"
 ```
 
-## 3. 如何生产 token
-
-使用合适的浏览器访问`http://服务器IP:8199/`，然后等待即可
-
-## 4. 公共节点
+## 3. 公共节点
 
 获取 token 地址：https://chatarkose.xyhelper.cn/token
 

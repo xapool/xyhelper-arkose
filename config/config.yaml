@@ -27,3 +27,4 @@ key:
 PORT: 3000
 
 # FORWORD_URL: https://arkose.xyhelper.cn/pushtoken
+MASTER: true
