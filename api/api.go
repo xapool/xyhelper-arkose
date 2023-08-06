@@ -2,6 +2,8 @@ package api
 
 import (
 	"log"
+	"math/rand"
+	"strconv"
 	"strings"
 	"xyhelper-arkose/config"
 
@@ -9,6 +11,7 @@ import (
 	"github.com/gogf/gf/v2/errors/gerror"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/os/gtime"
+	"github.com/gogf/gf/v2/text/gstr"
 	"github.com/gogf/gf/v2/util/gconv"
 )
 
@@ -31,6 +34,17 @@ var (
 )
 
 func GetTokenByPayload(ctx g.Ctx, payload string, userAgent string) (string, error) {
+	// g.Log().Info(ctx, "开始获取token", payload)
+	// 以&分割转换为数组
+	payloadArray := gstr.Split(payload, "&")
+	// 移除最后一个元素
+	payloadArray = payloadArray[:len(payloadArray)-1]
+	// 将 rnd=0.3046791926621015 添加到数组最后
+
+	payloadArray = append(payloadArray, "rnd="+strconv.FormatFloat(rand.Float64(), 'f', -1, 64))
+	// 以&连接数组
+	payload = strings.Join(payloadArray, "&")
+	// g.Log().Info(ctx, "payload", payload)
 	client := g.Client()
 	client.SetHeaderMap(headers)
 	if config.Proxy != "" {

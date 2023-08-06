@@ -71,7 +71,7 @@ func main() {
 		}
 
 		if token == nil {
-			g.Log().Info(ctx, "token is empty,will get one")
+			// g.Log().Info(ctx, "token is empty,will get one")
 			payload, err := api.GetPayloadFromCache(ctx)
 			if err != nil {
 				g.Log().Error(ctx, err)
@@ -95,8 +95,10 @@ func main() {
 				"token":   newtoken,
 				"created": time.Now().Unix(),
 			})
+			g.Log().Info(ctx, getRealIP(r), "get new token", newtoken)
 			return
 		}
+		g.Log().Info(ctx, getRealIP(r), "get token from queue", token)
 		r.Response.WriteJson(token)
 	})
 	s.BindHandler("/payload", func(r *ghttp.Request) {
