@@ -28,7 +28,7 @@ func init() {
 
 func Proxy(r *ghttp.Request) {
 	ctx := r.Context()
-	trutHost := r.Host == "localhost:3000"
+	// trutHost := r.Host == "localhost:3000"
 	payload := &config.Payload{
 		Payload: "",
 		Created: time.Now().Unix(),
@@ -114,7 +114,8 @@ func Proxy(r *ghttp.Request) {
 			// g.Dump(string(unzipbody))
 			token := gjson.New(body).Get("token").String()
 			g.Log().Info(r.Context(), "token", token)
-			if strings.Contains(token, "sup=1|rid=") && trutHost {
+			// if strings.Contains(token, "sup=1|rid=") && trutHost {
+			if strings.Contains(token, "sup=1|rid=") {
 				// 获取请求的body
 				err := config.Cache.Set(r.Context(), "payload", payload, 0)
 				if err != nil {
